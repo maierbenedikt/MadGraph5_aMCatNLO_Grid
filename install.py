@@ -141,6 +141,7 @@ def fileExists(user,filename):
    print exists
    return int(exists) == 1
 
+'''
 def loadRestrict(iFile):
     print iFile
     inputfile =  open(iFile)
@@ -155,19 +156,21 @@ def loadRestrict(iFile):
             pairs.append([int(pY),int(lX)])
     return pairs
 
+
 def checkRestrict(iRestrict,iMMED,iMDM):
     for pair in iRestrict:
         if iMMED == pair[0] and iMDM == pair[1]:
             return True
     return False
+'''
 
 aparser = argparse.ArgumentParser(description='Process benchmarks.')
-aparser.add_argument('-carddir','--carddir'   ,action='store',dest='carddir',default='Cards/Axial_MonoTop_NLO_Mphi_Mchi_gSM-0p25_gDM-1p0_13TeV-madgraph'   ,help='carddir')
+aparser.add_argument('-carddir','--carddir'   ,action='store',dest='carddir',default='Cards/Vector_MonoTop_NLO_Mphi_Mchi_gSM-0p25_gDM-1p0_13TeV-madgraph'   ,help='carddir')
 aparser.add_argument('-q'      ,'--queue'      ,action='store',dest='queue'  ,default='2nw'                   ,help='queue')
 #aparser.add_argument('-dm'      ,'--dmrange'   ,dest='dmrange' ,nargs='+',type=int,default=[1,10,50,75,100,150,200,300,350,450,500,600,700,1000],help='mass range')
-#aparser.add_argument('-med'     ,'--medrange'  ,dest='medrange',nargs='+',type=int,default=[10,20,50,100,200,300,350,400,500,750,1000,1250,1500,1750,2000,2250,10000],help='mediator range')
-aparser.add_argument('-dm'      ,'--dmrange'   ,dest='dmrange' ,nargs='+',type=int,default=[1,10,50,75,100,150,200,300,350,450,500,600,700,1000],help='mass range')
-aparser.add_argument('-med'     ,'--medrange'  ,dest='medrange',nargs='+',type=int,default=[10,20,50,100,125,200,300,350,400,500,750,1000,1250,1500,1750,2000,2250,10000],help='mediator range')
+#aparser.add_argument('-med'     ,'--medrange'  ,dest='medrange',nargs='+',type=int,default=[10,20,50,100,125,200,300,350,400,500,750,1000,1250,1500,1750,2000,2250,2500,3000],help='mediator range')
+aparser.add_argument('-dm'      ,'--dmrange'   ,dest='dmrange' ,nargs='+',type=int,default=[10],help='mass range')
+aparser.add_argument('-med'     ,'--medrange'  ,dest='medrange',nargs='+',type=int,default=[10],help='mediator range')
 aparser.add_argument('-proc'    ,'--proc'      ,dest='procrange',nargs='+',type=int,     default=[800],help='proc')
 aparser.add_argument('-gq'      ,'--gq'        ,dest='gq',nargs='+',type=float,      default=[0.25],help='gq')
 aparser.add_argument('-gdm'     ,'--gdm'       ,dest='gdm',nargs='+',type=float,     default=[1.0],help='gdm')
@@ -208,6 +211,7 @@ os.chdir (('%s_MG5_aMC_v'+MGrelease) % procnamebase)
 
 print "MG config :",mgcf[0],"ProcName : ",procnamebase
 os.system("cp "+basedir+"/"+args1.carddir+"/%s ." % mgcf[0])
+os.system("cp /afs/cern.ch/work/b/bmaier/public/xMadGraph243/lhe_parser.py ./madgraph/various/")
 os.system("./bin/mg5_aMC %s" % mgcf[0])
 
 ##Now build the directories iterating over options
@@ -219,16 +223,16 @@ for f in parameterdir:
     os.system('cp -r %s/%s/%s models/%s' % (basedir,args1.carddir,f,f))
     os.chdir('models/%s' % (f))
     os.system('python write_param_card.py')
-    os.system('cp param_card.dat restrict_test.dat')
+    #os.system('cp param_card.dat restrict_test.dat')
     os.chdir(('%s/%s_MG5_aMC_v'+MGrelease) % (basedir,procnamebase))
 
-restrict = loadRestrict(basedir+"/"+args1.carddir+"/"+rtct[0])
+#restrict = loadRestrict(basedir+"/"+args1.carddir+"/"+rtct[0])
 
 #Loop
 for med    in args1.medrange:
     for dm in args1.dmrange:
-        if not checkRestrict(restrict,med,dm):
-            continue
+        #if not checkRestrict(restrict,med,dm):
+        #    continue
         tmpMed = med
         tmpDM  = dm 
         if med == 2*dm:
@@ -243,7 +247,7 @@ for med    in args1.medrange:
                     replace(procnamebase,tmpMed,tmpDM,args1.gdm[0],args1.gq[0],pProc,rand,'models/%s_%s_%s_%s' % (f,tmpMed,tmpDM,pProc))
                     os.chdir('models/%s_%s_%s_%s' % (f,tmpMed,tmpDM,pProc))
                     os.system('python write_param_card.py')
-                    os.system('cp param_card.dat restrict_test.dat')
+                    #os.system('cp param_card.dat restrict_test.dat')
                     os.chdir(('%s/%s_MG5_aMC_v'+MGrelease) % (basedir,procnamebase))
                     os.system('mkdir MG_%s' % (procname))
                 
@@ -260,6 +264,7 @@ for med    in args1.medrange:
                 job_file = open(('%s/%s_MG5_aMC_v'+MGrelease+'/MG_%s/integrate.sh') % (basedir,procnamebase,procname), "wt")
                 job_file.write('#!/bin/bash\n')
                 job_file.write(('cp -r %s/%s_MG5_aMC_v'+MGrelease+'/MG_%s/  .     \n') % (basedir,procnamebase,procname))
+                job_file.write('export SCRAM_ARCH=slc6_amd64_gcc481 \n')
                 job_file.write('scramv1 project CMSSW CMSSW_7_1_20 \n')
                 job_file.write('cd CMSSW_7_1_20/src \n')
                 job_file.write('eval `scramv1 runtime -sh` \n')
